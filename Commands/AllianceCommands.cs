@@ -10,7 +10,7 @@ internal static class AllianceCommands
     static readonly bool PlayerAlliances = Plugin.Alliances.Value;
     static readonly bool ClanAlliances = Plugin.ClanBasedAlliances.Value;
 
-    [Command(name: "toggleAllianceInvites", shortHand: "invites", adminOnly: false, usage: ".invites", description: "Toggles being able to be invited to an alliance. Allowed in raids of allied players and share exp if applicable.")]
+    [Command(name: "toggleAllianceInvites", shortHand: "ainvites", adminOnly: false, usage: ".ainvites", description: "Toggles being able to be invited to an alliance. Allowed in raids of allied players and share exp if applicable.")]
     public static void ToggleAllianceInvitesCommand(ChatCommandContext ctx)
     {
         if (!PlayerAlliances)
@@ -137,7 +137,7 @@ internal static class AllianceCommands
         }
     }
 
-    [Command(name: "allianceDisband", shortHand: "disband", adminOnly: false, usage: ".disband", description: "Disbands alliance.")]
+    [Command(name: "allianceDisband", shortHand: "adisband", adminOnly: false, usage: ".adisband", description: "Disbands alliance.")]
     public static void DisbandAllianceCommand(ChatCommandContext ctx)
     {
         if (!PlayerAlliances)
@@ -166,7 +166,7 @@ internal static class AllianceCommands
         Core.DataStructures.SavePlayerAlliances();   
     }
 
-    [Command(name: "leaveAlliance", shortHand: "leave", adminOnly: false, usage: ".leave", description: "Leaves alliance if in one.")]
+    [Command(name: "leaveAlliance", shortHand: "aleave", adminOnly: false, usage: ".aleave", description: "Leaves alliance if in one.")]
     public static void LeaveAllianceCommand(ChatCommandContext ctx)
     {
         if (!PlayerAlliances)

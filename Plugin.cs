@@ -22,7 +22,6 @@ internal class Plugin : BasePlugin
 
     // config entries
     private static ConfigEntry<bool> _raidGuard;
-    private static ConfigEntry<bool> _damageIntruders;
     private static ConfigEntry<bool> _alliances;
     private static ConfigEntry<bool> _clanBasedAlliances;
     private static ConfigEntry<int> _maxAllianceSize;
@@ -30,7 +29,6 @@ internal class Plugin : BasePlugin
 
     // public getters, kinda verbose might just get rid of these
     public static ConfigEntry<bool> RaidGuard => _raidGuard;
-    public static ConfigEntry<bool> DamageIntruders => _damageIntruders;
     public static ConfigEntry<bool> Alliances => _alliances;
     public static ConfigEntry<int> MaxAllianceSize => _maxAllianceSize;
     public static ConfigEntry<bool> ClanBasedAlliances => _clanBasedAlliances;
@@ -50,13 +48,12 @@ internal class Plugin : BasePlugin
         {
             CreateDirectories(path);
         }
+
         _raidGuard = InitConfigEntry("Config", "RaidGuard", false, "Enable or disable the prevention of raid interference (only territory clan members and raiding clan members are allowed in territory for duration of the raid once breach by raiders is detected).");
-        _damageIntruders = InitConfigEntry("Config", "DamageIntruders", false, "Enable or disable damaging raid intruders if RaidGuard is enabled (if alliances are not enabled the owning clan is allowed in the territory as is the raider clan).");
         _alliances = InitConfigEntry("Config", "Alliances", false, "Enable or disable the ability to form alliances.");
-        _clanBasedAlliances = InitConfigEntry("Config", "ClanBasedAlliances", false, "If true, clan leaders will decide if the entire clan participates in alliances. If false, it will be player-based. (Alliances must be enabled as well)");
-        _preventFriendlyFire = InitConfigEntry("Config", "PreventFriendlyFire", false, "True to prevent damage between players in alliances, false to allow. (damage only at the moment)");
-        _maxAllianceSize = InitConfigEntry("Config", "MaxAllianceSize", 4, "The maximum number of players allowed in an alliance (clan members of founding alliance member are included automatically regardless if using clan-based alliances or not and do not count towards this number).");
-       
+        _clanBasedAlliances = InitConfigEntry("Config", "ClanBasedAlliances", false, "If true, clan leaders will decide if the entire clan participates in alliances. If false, it will be player-based. (Alliances must be enabled as well).");
+        _preventFriendlyFire = InitConfigEntry("Config", "PreventFriendlyFire", false, "True to prevent damage between players in alliances, false to allow.");
+        _maxAllianceSize = InitConfigEntry("Config", "MaxAllianceSize", 4, "The maximum number of players allowed in an alliance (clan members of founding alliance member are included automatically regardless if using clan-based alliances or not and do not count towards this number).");  
     }
     static ConfigEntry<T> InitConfigEntry<T>(string section, string key, T defaultValue, string description)
     {

@@ -11,8 +11,6 @@ namespace RaidGuard.Services;
 internal class RaidService
 {
     static readonly bool PlayerAlliances = Plugin.Alliances.Value;
-
-    static readonly bool DamageIntruders = Plugin.DamageIntruders.Value;
     static EntityManager EntityManager => Core.EntityManager;
     static DebugEventsSystem DebugEventsSystem => Core.DebugEventsSystem;
     static ServerGameManager ServerGameManager => Core.ServerGameManager;
@@ -143,7 +141,7 @@ internal class RaidService
                         }
                         if (!raidParticipants[heartEntity].Contains(userEntity) && CastleTerritoryExtensions.IsTileInTerritory(EntityManager, pos.Tile, ref castleHeart.CastleTerritoryEntity, out CastleTerritory _))
                         {
-                            if (DamageIntruders && !ServerGameManager.TryGetBuff(character, debuff.ToIdentifier(), out Entity _))
+                            if (!ServerGameManager.TryGetBuff(character, debuff.ToIdentifier(), out Entity _))
                             {
                                 ApplyBuffDebugEvent applyBuffDebugEvent = new()
                                 {
@@ -170,7 +168,7 @@ internal class RaidService
                                     tickBuffer[0] = tickBufferEntry;
                                     var damageBuffer = debuffEntity.ReadBuffer<DealDamageOnGameplayEvent>();
                                     DealDamageOnGameplayEvent damageBufferEntry = damageBuffer[0];
-                                    damageBufferEntry.DamageModifierPerHit *= 2f;
+                                    damageBufferEntry.DamageModifierPerHit *= 3f;
                                     damageBuffer[0] = damageBufferEntry;
                                 }
                             }

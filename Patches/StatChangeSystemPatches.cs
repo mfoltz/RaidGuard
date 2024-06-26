@@ -2,7 +2,6 @@
 using ProjectM;
 using ProjectM.Gameplay.Systems;
 using ProjectM.Network;
-using ProjectM.Scripting;
 using Unity.Collections;
 using Unity.Entities;
 
@@ -28,7 +27,7 @@ internal static class StatChangeSystemPatches
 
                 DealDamageEvent dealDamageEvent = entity.Read<DealDamageEvent>();
 
-                if (dealDamageEvent.MainType != MainDamageType.Physical || dealDamageEvent.MainType != MainDamageType.Spell) continue;
+                if (dealDamageEvent.MainType != MainDamageType.Physical && dealDamageEvent.MainType != MainDamageType.Spell) continue;
 
                 if (dealDamageEvent.Target.TryGetComponent(out PlayerCharacter target))
                 {
