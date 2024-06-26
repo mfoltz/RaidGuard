@@ -164,10 +164,14 @@ internal class RaidService
                                         lifeTime.Duration = 10f;
                                         debuffEntity.Write(lifeTime);
                                     }
-                                    var buffer = debuffEntity.ReadBuffer<CreateGameplayEventsOnTick>();
-                                    CreateGameplayEventsOnTick bufferEntry = buffer[0];
-                                    bufferEntry.MaxTicks = 10;
-                                    buffer[0] = bufferEntry;
+                                    var tickBuffer = debuffEntity.ReadBuffer<CreateGameplayEventsOnTick>();
+                                    CreateGameplayEventsOnTick tickBufferEntry = tickBuffer[0];
+                                    tickBufferEntry.MaxTicks = 10;
+                                    tickBuffer[0] = tickBufferEntry;
+                                    var damageBuffer = debuffEntity.ReadBuffer<DealDamageOnGameplayEvent>();
+                                    DealDamageOnGameplayEvent damageBufferEntry = damageBuffer[0];
+                                    damageBufferEntry.DamageModifierPerHit *= 2f;
+                                    damageBuffer[0] = damageBufferEntry;
                                 }
                             }
                             if (sendMessage) ServerChatUtils.SendSystemMessageToClient(EntityManager, user, "You are not allowed in this territory during a raid.");                
