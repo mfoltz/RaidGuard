@@ -4,7 +4,6 @@ using Stunlock.Core;
 using System.Runtime.InteropServices;
 using Unity.Collections;
 using Unity.Entities;
-using RaidGuard.Services;
 
 namespace RaidGuard;
 public static class ECSExtensions
@@ -78,14 +77,6 @@ public static class ECSExtensions
         PrefabCollectionSystem prefabCollectionSystem = Core.PrefabCollectionSystem;
         return (prefabCollectionSystem.PrefabGuidToNameDictionary.ContainsKey(prefabGUID)
             ? prefabCollectionSystem.PrefabGuidToNameDictionary[prefabGUID] + " " + prefabGUID : "Guid Not Found").ToString();
-    }
-    public static string GetPrefabName(this PrefabGUID itemPrefabGUID)
-    {
-        if (!LocalizationService.prefabNames.TryGetValue(itemPrefabGUID._Value, out var itemLocalizationHash))
-        {
-            return itemPrefabGUID.LookupName();
-        }
-        return LocalizationService.GetLocalization(itemLocalizationHash);
     }
     public static void LogComponentTypes(this Entity entity)
     {

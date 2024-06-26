@@ -10,7 +10,7 @@ using RaidGuard.Services;
 namespace RaidGuard.Services;
 internal class RaidService
 {
-    static readonly bool PlayerAlliances = Plugin.PlayerAlliances.Value;
+    static readonly bool PlayerAlliances = Plugin.Alliances.Value;
 
     static readonly bool DamageIntruders = Plugin.DamageIntruders.Value;
     static EntityManager EntityManager => Core.EntityManager;

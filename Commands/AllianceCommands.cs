@@ -1,22 +1,21 @@
 using ProjectM;
 using Unity.Entities;
 using VampireCommandFramework;
-using static RaidGuard.Systems.AllianceSystem.AllianceUtilities;
+using static RaidGuard.AllianceUtilities;
 
 namespace RaidGuard.Commands;
 internal static class AllianceCommands
 {
 
-    static readonly bool PlayerAlliances = Plugin.PlayerAlliances.Value;
+    static readonly bool PlayerAlliances = Plugin.Alliances.Value;
     static readonly bool ClanAlliances = Plugin.ClanBasedAlliances.Value;
-    
 
     [Command(name: "toggleAllianceInvites", shortHand: "invites", adminOnly: false, usage: ".invites", description: "Toggles being able to be invited to an alliance. Allowed in raids of allied players and share exp if applicable.")]
     public static void ToggleAllianceInvitesCommand(ChatCommandContext ctx)
     {
         if (!PlayerAlliances)
         {
-            LocalizationService.HandleReply(ctx, "Alliances are not enabled.");
+            ctx.Reply("Alliances are not enabled.");
             return;
         }
 
@@ -26,7 +25,7 @@ internal static class AllianceCommands
 
         if (ClanAlliances && ownerClanEntity.Equals(Entity.Null) || !Core.EntityManager.Exists(ownerClanEntity))
         {
-            LocalizationService.HandleReply(ctx, "You must be the leader of a clan to toggle alliance invites.");
+            ctx.Reply("You must be the leader of a clan to toggle alliance invites.");
             return;
         }
         else if (ClanAlliances)
@@ -34,14 +33,14 @@ internal static class AllianceCommands
             Entity userEntity = ctx.Event.SenderUserEntity;
             if (userEntity.TryGetComponent(out ClanRole clanRole) && !clanRole.Value.Equals(ClanRoleEnum.Leader))
             {
-                LocalizationService.HandleReply(ctx, "You must be the leader of a clan to toggle alliance invites.");
+                ctx.Reply("You must be the leader of a clan to toggle alliance invites.");
                 return;
             }
         }
 
         if (Core.DataStructures.PlayerAlliances.Any(kvp => kvp.Value.Contains(name)))
         {
-            LocalizationService.HandleReply(ctx, "You are already in an alliance. Leave or disband if owned before enabling invites.");
+            ctx.Reply("You are already in an alliance. Leave or disband if owned before enabling invites.");
             return;
         }
 
@@ -50,7 +49,7 @@ internal static class AllianceCommands
             bools["Grouping"] = !bools["Grouping"];
         }
         Core.DataStructures.SavePlayerBools();
-        LocalizationService.HandleReply(ctx, $"Alliance invites {(bools["Grouping"] ? "<color=green>enabled</color>" : "<color=red>disabled</color>")}.");
+        ctx.Reply( $"Alliance invites {(bools["Grouping"] ? "<color=green>enabled</color>" : "<color=red>disabled</color>")}.");
     }
 
     [Command(name: "allianceAdd", shortHand: "aa", adminOnly: false, usage: ".aa [Player/Clan]", description: "Adds player/clan to alliance if invites are toggled (if clan based owner of clan must toggle).")]
@@ -58,7 +57,7 @@ internal static class AllianceCommands
     {  
         if (!PlayerAlliances)
         {
-            LocalizationService.HandleReply(ctx, "Alliances are not enabled.");
+            ctx.Reply("Alliances are not enabled.");
             return;
         }
 
@@ -69,7 +68,7 @@ internal static class AllianceCommands
         {
             if (CheckClanLeadership(ctx, ownerClanEntity))
             {
-                LocalizationService.HandleReply(ctx, "You must be the leader of a clan to form an alliance.");
+                ctx.Reply("You must be the leader of a clan to form an alliance.");
                 return;
             }
 
@@ -86,7 +85,7 @@ internal static class AllianceCommands
     {
         if (!PlayerAlliances)
         {
-            LocalizationService.HandleReply(ctx, "Alliances are not enabled.");
+            ctx.Reply("Alliances are not enabled.");
             return;
         }
 
@@ -95,13 +94,13 @@ internal static class AllianceCommands
 
         if (ClanAlliances && CheckClanLeadership(ctx, ownerClanEntity))
         {
-            LocalizationService.HandleReply(ctx, "You must be the leader of a clan to remove clans from an alliance.");
+            ctx.Reply("You must be the leader of a clan to remove clans from an alliance.");
             return;
         }
 
         if (!Core.DataStructures.PlayerAlliances.ContainsKey(ownerId))
         {
-            LocalizationService.HandleReply(ctx, "You don't have an alliance.");
+            ctx.Reply("You don't have an alliance.");
             return;
         }
 
@@ -122,7 +121,7 @@ internal static class AllianceCommands
     {
         if (!PlayerAlliances)
         {
-            LocalizationService.HandleReply(ctx, "Alliances are not enabled.");
+            ctx.Reply("Alliances are not enabled.");
             return;
         }        
 
@@ -143,7 +142,7 @@ internal static class AllianceCommands
     {
         if (!PlayerAlliances)
         {
-            LocalizationService.HandleReply(ctx, "Alliances are not enabled.");
+            ctx.Reply("Alliances are not enabled.");
             return;
         }
 
@@ -152,18 +151,18 @@ internal static class AllianceCommands
 
         if (ClanAlliances && CheckClanLeadership(ctx, ownerClanEntity))
         {
-            LocalizationService.HandleReply(ctx, "You must be the leader of your clan to disband the alliance.");
+            ctx.Reply("You must be the leader of your clan to disband the alliance.");
             return;
         }
 
         if (!Core.DataStructures.PlayerAlliances.ContainsKey(ownerId)) 
         {
-            LocalizationService.HandleReply(ctx, "You don't have an alliance to disband.");
+            ctx.Reply("You don't have an alliance to disband.");
             return;
         }
        
         Core.DataStructures.PlayerAlliances.Remove(ownerId);
-        LocalizationService.HandleReply(ctx, "Alliance disbanded.");
+        ctx.Reply("Alliance disbanded.");
         Core.DataStructures.SavePlayerAlliances();   
     }
 
@@ -172,7 +171,7 @@ internal static class AllianceCommands
     {
         if (!PlayerAlliances)
         {
-            LocalizationService.HandleReply(ctx, "Alliances are not enabled.");
+            ctx.Reply("Alliances are not enabled.");
             return;
         }
 
@@ -182,13 +181,13 @@ internal static class AllianceCommands
 
         if (ClanAlliances && CheckClanLeadership(ctx, ownerClanEntity))
         {
-            LocalizationService.HandleReply(ctx, "You must be the leader of a clan to leave an alliance.");
+            ctx.Reply("You must be the leader of a clan to leave an alliance.");
             return;
         }
 
         if (Core.DataStructures.PlayerAlliances.ContainsKey(ownerId))
         {
-            LocalizationService.HandleReply(ctx, "You can't leave your own alliance. Disband it instead.");
+            ctx.Reply("You can't leave your own alliance. Disband it instead.");
             return;
         }
 
@@ -201,7 +200,7 @@ internal static class AllianceCommands
             }
             else
             {
-                LocalizationService.HandleReply(ctx, "Your clan is not in an alliance.");
+                ctx.Reply("Your clan is not in an alliance.");
             }
         }
         else
@@ -213,7 +212,7 @@ internal static class AllianceCommands
             }
             else
             {
-                LocalizationService.HandleReply(ctx, "You're not in an alliance.");
+                ctx.Reply("You're not in an alliance.");
             }    
         }
     }

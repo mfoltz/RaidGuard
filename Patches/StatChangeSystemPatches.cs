@@ -11,9 +11,7 @@ namespace RaidGuard.Patches;
 [HarmonyPatch]
 internal static class StatChangeSystemPatches
 {
-    static ServerGameManager ServerGameManager => Core.ServerGameManager;
-    static GameModeType GameMode => Core.ServerGameSettings.GameModeType;
-    static readonly bool PlayerAlliances = Plugin.PlayerAlliances.Value;
+    static readonly bool PlayerAlliances = Plugin.Alliances.Value;
     static readonly bool PreventFriendlyFire = Plugin.PreventFriendlyFire.Value;
 
     [HarmonyPatch(typeof(DealDamageSystem), nameof(DealDamageSystem.OnUpdate))]
@@ -26,6 +24,7 @@ internal static class StatChangeSystemPatches
             foreach (Entity entity in entities)
             {
                 if (!Core.hasInitialized) continue;
+                if (!PlayerAlliances || !PreventFriendlyFire) continue;
 
                 DealDamageEvent dealDamageEvent = entity.Read<DealDamageEvent>();
 
@@ -33,7 +32,7 @@ internal static class StatChangeSystemPatches
 
                 if (dealDamageEvent.Target.TryGetComponent(out PlayerCharacter target))
                 {
-                    if (PlayerAlliances && PreventFriendlyFire && !GameMode.Equals(GameModeType.PvE) && dealDamageEvent.SpellSource.TryGetComponent(out EntityOwner entityOwner) && entityOwner.Owner.TryGetComponent(out PlayerCharacter source))
+                    if (dealDamageEvent.SpellSource.TryGetComponent(out EntityOwner entityOwner) && entityOwner.Owner.TryGetComponent(out PlayerCharacter source))
                     {
                         Dictionary<ulong, HashSet<string>> playerAlliances = Core.DataStructures.PlayerAlliances;
                         string targetName = target.Name.Value;

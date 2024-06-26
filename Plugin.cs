@@ -23,15 +23,15 @@ internal class Plugin : BasePlugin
     // config entries
     private static ConfigEntry<bool> _raidGuard;
     private static ConfigEntry<bool> _damageIntruders;
-    private static ConfigEntry<int> _maxAllianceSize;
-    private static ConfigEntry<bool> _playerAlliances;
+    private static ConfigEntry<bool> _alliances;
     private static ConfigEntry<bool> _clanBasedAlliances;
+    private static ConfigEntry<int> _maxAllianceSize;
     private static ConfigEntry<bool> _preventFriendlyFire;
 
     // public getters, kinda verbose might just get rid of these
     public static ConfigEntry<bool> RaidGuard => _raidGuard;
     public static ConfigEntry<bool> DamageIntruders => _damageIntruders;
-    public static ConfigEntry<bool> PlayerAlliances => _playerAlliances;
+    public static ConfigEntry<bool> Alliances => _alliances;
     public static ConfigEntry<int> MaxAllianceSize => _maxAllianceSize;
     public static ConfigEntry<bool> ClanBasedAlliances => _clanBasedAlliances;
     public static ConfigEntry<bool> PreventFriendlyFire => _preventFriendlyFire;
@@ -50,14 +50,14 @@ internal class Plugin : BasePlugin
         {
             CreateDirectories(path);
         }
-        _raidGuard = InitConfigEntry("Config", "PreventRaidInterference", false, "Enable or disable the prevention of raid interference (only territory clan members and raiding clan members are allowed in territory for duration of the raid once breach by raiders is detected).");
-        _damageIntruders = InitConfigEntry("Config", "DamageIntruders", false, "Enable or disable damaging raid intruders if RaidMonitor is enabled.");
-        _playerAlliances = InitConfigEntry("Config", "PlayerAlliances", false, "Enable or disable the ability to group with players not in your clan for experience sharing.");
-        _clanBasedAlliances = InitConfigEntry("Config", "ClanBasedAlliances", false, "If true, clan leaders will decide if the entire clan participates in alliances. If false, it will be up to the individual.");
+        _raidGuard = InitConfigEntry("Config", "RaidGuard", false, "Enable or disable the prevention of raid interference (only territory clan members and raiding clan members are allowed in territory for duration of the raid once breach by raiders is detected).");
+        _damageIntruders = InitConfigEntry("Config", "DamageIntruders", false, "Enable or disable damaging raid intruders if RaidGuard is enabled (if alliances are not enabled the owning clan is allowed in the territory as is the raider clan).");
+        _alliances = InitConfigEntry("Config", "Alliances", false, "Enable or disable the ability to form alliances.");
+        _clanBasedAlliances = InitConfigEntry("Config", "ClanBasedAlliances", false, "If true, clan leaders will decide if the entire clan participates in alliances. If false, it will be player-based. (Alliances must be enabled as well)");
         _preventFriendlyFire = InitConfigEntry("Config", "PreventFriendlyFire", false, "True to prevent damage between players in alliances, false to allow. (damage only at the moment)");
-        _maxAllianceSize = InitConfigEntry("Config", "MaxAllianceSize", 5, "The maximum number of players that can share experience in a group.");
+        _maxAllianceSize = InitConfigEntry("Config", "MaxAllianceSize", 4, "The maximum number of players allowed in an alliance (clan members of founding alliance member are included automatically regardless if using clan-based alliances or not and do not count towards this number).");
+       
     }
-
     static ConfigEntry<T> InitConfigEntry<T>(string section, string key, T defaultValue, string description)
     {
         // Bind the configuration entry and get its value
@@ -75,7 +75,6 @@ internal class Plugin : BasePlugin
                 entry.Value = existingEntry.Value;
             }
         }
-
         return entry;
     }
 
@@ -97,7 +96,7 @@ internal class Plugin : BasePlugin
     static void LoadAllData()
     {
         Core.DataStructures.LoadPlayerBools();
-        if (PlayerAlliances.Value)
+        if (Alliances.Value)
         {
             Core.DataStructures.LoadPlayerAlliances();
         }

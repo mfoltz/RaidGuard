@@ -1,18 +1,13 @@
 using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP.Utils.Collections;
-using RaidGuard.Services;
 using ProjectM;
-using ProjectM.Network;
 using ProjectM.Physics;
 using ProjectM.Scripting;
-using ProjectM.Shared.Systems;
-using RaidGuard.Systems;
-using Stunlock.Core;
+using RaidGuard.Services;
 using System.Collections;
 using System.Text.Json;
 using Unity.Entities;
 using UnityEngine;
-using static RaidGuard.Core.DataStructures;
 
 namespace RaidGuard;
 internal static class Core
@@ -23,14 +18,8 @@ internal static class Core
     public static ServerGameSettingsSystem ServerGameSettingsSystem { get; internal set; }
     public static ServerScriptMapper ServerScriptMapper { get; internal set; }
     public static DebugEventsSystem DebugEventsSystem { get; internal set; }
-    public static ModifyUnitStatBuffSystem_Spawn ModifyUnitStatBuffSystem_Spawn { get; internal set; }
-    public static ReplaceAbilityOnSlotSystem ReplaceAbilityOnSlotSystem { get; internal set; }
-    public static EntityCommandBufferSystem EntityCommandBufferSystem { get; internal set; }
-    public static ClaimAchievementSystem ClaimAchievementSystem { get; internal set; }
-    public static GameDataSystem GameDataSystem { get; internal set; }
     public static PlayerService Players { get; } = new();
     public static ServerGameManager ServerGameManager => ServerScriptMapper.GetServerGameManager();
-    public static ScriptSpawnServer ScriptSpawnServer { get; internal set;}
     public static ServerGameSettings ServerGameSettings { get; internal set; }
     public static double ServerTime => ServerGameManager.ServerTime;
     public static ManualLogSource Log => Plugin.LogInstance;
@@ -47,13 +36,7 @@ internal static class Core
         ServerGameSettingsSystem = Server.GetExistingSystemManaged<ServerGameSettingsSystem>();
         DebugEventsSystem = Server.GetExistingSystemManaged<DebugEventsSystem>();
         ServerScriptMapper = Server.GetExistingSystemManaged<ServerScriptMapper>();
-        ModifyUnitStatBuffSystem_Spawn = Server.GetExistingSystemManaged<ModifyUnitStatBuffSystem_Spawn>();
-        ReplaceAbilityOnSlotSystem = Server.GetExistingSystemManaged<ReplaceAbilityOnSlotSystem>();
-        ClaimAchievementSystem = Server.GetExistingSystemManaged<ClaimAchievementSystem>();
-        EntityCommandBufferSystem = Server.GetExistingSystemManaged<EntityCommandBufferSystem>();
-        GameDataSystem = Server.GetExistingSystemManaged<GameDataSystem>();
         ServerGameSettings = Server.GetExistingSystemManaged<ServerGameSettingsSystem>()._Settings;
-        ScriptSpawnServer = Server.GetExistingSystemManaged<ScriptSpawnServer>();
 
         hasInitialized = true;
     }
@@ -108,7 +91,6 @@ internal static class Core
         {
             {"PlayerBools", JsonFiles.PlayerBoolsJson},
             {"PlayerAlliances", JsonFiles.PlayerAlliancesJson},
-
         };
 
         // Generic methods to save/load dictionaries

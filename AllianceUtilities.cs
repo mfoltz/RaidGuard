@@ -4,10 +4,9 @@ using RaidGuard.Services;
 using Unity.Entities;
 using VampireCommandFramework;
 
-namespace RaidGuard.Systems;
-public class AllianceSystem
+namespace RaidGuard;
+internal static class AllianceUtilities
 {
-
     public static bool CheckClanLeadership(ChatCommandContext ctx, Entity ownerClanEntity)
     {
         if (ownerClanEntity.Equals(Entity.Null))
@@ -21,9 +20,18 @@ public class AllianceSystem
 
     public static void HandleClanAlliance(ChatCommandContext ctx, ulong ownerId, string name)
     {
-        if (!Core.DataStructures.PlayerAlliances.ContainsKey(ownerId))
+        string ownerName = ctx.Event.User.CharacterName.Value;
+        HashSet<string> ownerClanMembers = GetOwnerClanMembers(ctx.Event.User.ClanEntity._Entity);
+        if (!Core.DataStructures.PlayerAlliances.ContainsKey(ownerId)) // when first creating also add owner and clan members
         {
             Core.DataStructures.PlayerAlliances[ownerId] = [];
+            HashSet<string> newAlliance = Core.DataStructures.PlayerAlliances[ownerId];
+            newAlliance.Add(ownerName);
+            if (ownerClanMembers.Count > 0)
+            {
+                newAlliance.UnionWith(ownerClanMembers);
+            }
+            Core.DataStructures.SavePlayerAlliances();
         }
 
         HashSet<string> alliance = Core.DataStructures.PlayerAlliances[ownerId];
@@ -32,7 +40,7 @@ public class AllianceSystem
 
         if (clanEntity.Equals(Entity.Null))
         {
-            HandleReply(ctx, "Clan/leader not found...");
+            ctx.Reply("Clan/leader not found...");
             return;
         }
 
@@ -40,8 +48,8 @@ public class AllianceSystem
         {
             return;
         }
-
-        AddMembersToAlliance(ctx, alliance, members);
+        
+        AddMembersToAlliance(ctx, alliance, members, ownerClanMembers);
     }
     public static bool TryAddClanMembers(ChatCommandContext ctx, ulong ownerId, Entity clanEntity, HashSet<string> members)
     {
@@ -50,7 +58,7 @@ public class AllianceSystem
 
         if (leaderIndex == -1)
         {
-            HandleReply(ctx, "Couldn't find clan leader to verify consent.");
+            ctx.Reply("Couldn't find clan leader to verify consent.");
             return false;
         }
 
@@ -60,14 +68,29 @@ public class AllianceSystem
             var users = userBuffer[i];
             User user = users.UserEntity.Read<User>();
 
-            if (i == leaderIndex && !IsClanLeaderInvitesEnabled(user))
+            if (i == leaderIndex && !IsLeaderEligibleForAlliance(user, user.CharacterName.Value))
             {
-                HandleReply(ctx, "Clan leader does not have alliances invites enabled.");
+                ctx.Reply("Clan leader does not have alliances invites enabled.");
                 return false;
             }
             members.Add(user.CharacterName.Value);
         }
         return true;
+    }
+    public static HashSet<string> GetOwnerClanMembers(Entity ownerClanEntity)
+    {
+        HashSet<string> ownerClanMembers = [];
+        if (!ownerClanEntity.Equals(Entity.Null))
+        {
+            var userBuffer = ownerClanEntity.ReadBuffer<SyncToUserBuffer>();
+            for (int i = 0; i < userBuffer.Length; i++)
+            {
+                var users = userBuffer[i];
+                User user = users.UserEntity.Read<User>();
+                ownerClanMembers.Add(user.CharacterName.Value);
+            }
+        }
+        return ownerClanMembers;
     }
     public static void RemoveClanFromAlliance(ChatCommandContext ctx, HashSet<string> alliance, string clanName)
     {
@@ -76,7 +99,7 @@ public class AllianceSystem
 
         if (clanEntity.Equals(Entity.Null))
         {
-            HandleReply(ctx, "Clan not found...");
+            ctx.Reply("Clan not found...");
             return;
         }
 
@@ -96,7 +119,7 @@ public class AllianceSystem
         }
         string replyMessage = removed.Count > 0 ? string.Join(", ", removed.Select(member => $"<color=green>{member}</color>")) : "No members from clan found to remove.";
         if (removed.Count > 0) replyMessage += " removed from alliance.";
-        HandleReply(ctx, replyMessage);
+        ctx.Reply(replyMessage);
         Core.DataStructures.SavePlayerAlliances();
     }
     public static int GetClanLeaderIndex(DynamicBuffer<ClanMemberStatus> clanBuffer)
@@ -110,26 +133,37 @@ public class AllianceSystem
         }
         return -1;
     }
-    public static bool IsClanLeaderInvitesEnabled(User user)
+    public static bool IsLeaderEligibleForAlliance(User leaderUser, string leaderName)
     {
-        return Core.DataStructures.PlayerBools.TryGetValue(user.PlatformId, out var bools) && bools["Grouping"];
+        if (Core.DataStructures.PlayerBools.TryGetValue(leaderUser.PlatformId, out var bools) && bools["Grouping"])
+        {
+            if (!Core.DataStructures.PlayerAlliances.ContainsKey(leaderUser.PlatformId) && !Core.DataStructures.PlayerAlliances.Values.Any(alliance => alliance.Equals(leaderName)))
+            {
+                bools["Grouping"] = false;
+                Core.DataStructures.SavePlayerBools();
+                return true;
+            }
+        }
+        return false;
     }
-    public static void AddMembersToAlliance(ChatCommandContext ctx, HashSet<string> alliance, HashSet<string> members)
+    public static void AddMembersToAlliance(ChatCommandContext ctx, HashSet<string> alliance, HashSet<string> members, HashSet<string> ownerClanMembers)
     {
-        if (members.Count > 0 && alliance.Count + members.Count < Plugin.MaxAllianceSize.Value)
+        int currentAllianceSize = alliance.Count - ownerClanMembers.Count;
+
+        if (members.Count > 0 && currentAllianceSize + members.Count < Plugin.MaxAllianceSize.Value)
         {
             string membersAdded = string.Join(", ", members.Select(member => $"<color=green>{member}</color>"));
             alliance.UnionWith(members);
-            HandleReply(ctx, $"{membersAdded} were added to the alliance.");
+            ctx.Reply($"{membersAdded} were added to the alliance.");
             Core.DataStructures.SavePlayerAlliances();
         }
         else if (members.Count == 0)
         {
-            HandleReply(ctx, "Couldn't find any clan members to add.");
+            ctx.Reply("Couldn't find any clan members to add.");
         }
         else
         {
-            HandleReply(ctx, "Alliance would exceed max size by adding found clan members.");
+            ctx.Reply("Alliance would exceed max size by adding found clan members.");
         }
     }
     public static void HandlePlayerAlliance(ChatCommandContext ctx, ulong ownerId, string name)
@@ -139,37 +173,38 @@ public class AllianceSystem
         {
             if (player.Equals(Entity.Null))
             {
-                HandleReply(ctx, "Player not found...");
+                ctx.Reply("Player not found...");
                 return;
             }
 
             User foundUser = player.Read<User>();
             if (foundUser.PlatformId == ownerId)
             {
-                HandleReply(ctx, "Player not found...");
+                ctx.Reply("Player not found...");
                 return;
             }
 
             string playerName = foundUser.CharacterName.Value;
-            if (IsPlayerEligibleForAlliance(foundUser, ownerId, playerName))
+            if (IsPlayerEligibleForAlliance(foundUser, playerName))
             {
-                AddPlayerToAlliance(ctx, ownerId, playerName);
+                HashSet<string> ownerClanMembers = GetOwnerClanMembers(ctx.Event.User.ClanEntity._Entity);
+                AddPlayerToAlliance(ctx, ownerId, playerName, ownerClanMembers);
             }
             else
             {
-                HandleReply(ctx, $"<color=green>{playerName}</color> does not have alliances enabled or is already in an alliance.");
+                ctx.Reply($"<color=green>{playerName}</color> does not have alliances enabled or is already in an alliance.");
             }
         }
         else
         {
-            HandleReply(ctx, "Player not found...");
+            ctx.Reply("Player not found...");
         }
     }
-    public static bool IsPlayerEligibleForAlliance(User foundUser, ulong ownerId, string playerName)
+    public static bool IsPlayerEligibleForAlliance(User foundUser, string playerName)
     {
         if (Core.DataStructures.PlayerBools.TryGetValue(foundUser.PlatformId, out var bools) && bools["Grouping"])
         {
-            if (!Core.DataStructures.PlayerAlliances.ContainsKey(foundUser.PlatformId) && (!Core.DataStructures.PlayerAlliances.ContainsKey(ownerId) || !Core.DataStructures.PlayerAlliances[ownerId].Contains(playerName)))
+            if (!Core.DataStructures.PlayerAlliances.ContainsKey(foundUser.PlatformId) && !Core.DataStructures.PlayerAlliances.Values.Any(alliance => alliance.Equals(playerName)))
             {
                 bools["Grouping"] = false;
                 Core.DataStructures.SavePlayerBools();
@@ -178,31 +213,34 @@ public class AllianceSystem
         }
         return false;
     }
-    public static void AddPlayerToAlliance(ChatCommandContext ctx, ulong ownerId, string playerName)
+    public static void AddPlayerToAlliance(ChatCommandContext ctx, ulong ownerId, string playerName, HashSet<string> ownerClanMembers)
     {
-        if (!Core.DataStructures.PlayerAlliances.ContainsKey(ownerId))
+        string ownerName = ctx.Event.User.CharacterName.Value;
+
+        if (!Core.DataStructures.PlayerAlliances.ContainsKey(ownerId)) // when first creating also add owner and clan members
         {
-            Core.DataStructures.PlayerAlliances[ownerId] = [];
+            Core.DataStructures.PlayerAlliances[ownerId] = []; 
+            HashSet<string> newAlliance = Core.DataStructures.PlayerAlliances[ownerId];
+            newAlliance.Add(ownerName);
+            if (ownerClanMembers.Count > 0)
+            {
+                newAlliance.UnionWith(ownerClanMembers);
+            }
+            Core.DataStructures.SavePlayerAlliances();
         }
 
-        string ownerName = ctx.Event.User.CharacterName.Value;
         HashSet<string> alliance = Core.DataStructures.PlayerAlliances[ownerId];
+        int currentAllianceSize = alliance.Count - ownerClanMembers.Count;
 
-        if (alliance.Count < Plugin.MaxAllianceSize.Value && !alliance.Contains(playerName))
+        if (currentAllianceSize < Plugin.MaxAllianceSize.Value && !alliance.Contains(playerName))
         {
             alliance.Add(playerName);
-
-            if (!alliance.Contains(ownerName)) // add owner to alliance for simplified processing elsewhere
-            {
-                alliance.Add(ownerName);
-            }
-
             Core.DataStructures.SavePlayerAlliances();
-            HandleReply(ctx, $"<color=green>{playerName}</color> added to alliance.");
+            ctx.Reply($"<color=green>{playerName}</color> added to alliance.");
         }
         else
         {
-            HandleReply(ctx, $"Alliance is full or <color=green>{playerName}</color> is already in the alliance.");
+            ctx.Reply($"Alliance is full or <color=green>{playerName}</color> is already in the alliance.");
         }
     }
     public static void RemovePlayerFromAlliance(ChatCommandContext ctx, HashSet<string> alliance, string playerName)
@@ -212,11 +250,11 @@ public class AllianceSystem
         {
             alliance.Remove(playerKey);
             Core.DataStructures.SavePlayerAlliances();
-            HandleReply(ctx, $"<color=green>{char.ToUpper(playerName[0]) + playerName[1..].ToLower()}</color> removed from alliance.");
+            ctx.Reply($"<color=green>{char.ToUpper(playerName[0]) + playerName[1..].ToLower()}</color> removed from alliance.");
         }
         else
         {
-            HandleReply(ctx, $"<color=green>{char.ToUpper(playerName[0]) + playerName[1..].ToLower()}</color> not found in alliance.");
+            ctx.Reply($"<color=green>{char.ToUpper(playerName[0]) + playerName[1..].ToLower()}</color> not found in alliance.");
         }
     }
     public static void ListPersonalAllianceMembers(ChatCommandContext ctx, Dictionary<ulong, HashSet<string>> playerAlliances)
@@ -225,7 +263,7 @@ public class AllianceSystem
         string playerName = ctx.Event.User.CharacterName.Value;
         HashSet<string> members = playerAlliances.ContainsKey(ownerId) ? playerAlliances[ownerId] : playerAlliances.Where(groupEntry => groupEntry.Value.Contains(playerName)).SelectMany(groupEntry => groupEntry.Value).ToHashSet();
         string replyMessage = members.Count > 0 ? string.Join(", ", members.Select(member => $"<color=green>{member}</color>")) : "No members in alliance.";
-        HandleReply(ctx, replyMessage);
+        ctx.Reply(replyMessage);
     }
     public static void ListAllianceMembersByName(ChatCommandContext ctx, string name, Dictionary<ulong, HashSet<string>> playerAlliances)
     {
@@ -236,7 +274,7 @@ public class AllianceSystem
             string playerName = player.Read<User>().CharacterName.Value;
             HashSet<string> members = playerAlliances.ContainsKey(steamId) ? playerAlliances[steamId] : playerAlliances.Where(groupEntry => groupEntry.Value.Contains(playerName)).SelectMany(groupEntry => groupEntry.Value).ToHashSet();
             string replyMessage = members.Count > 0 ? string.Join(", ", members.Select(member => $"<color=green>{member}</color>")) : "No members in alliance.";
-            HandleReply(ctx, replyMessage);
+            ctx.Reply(replyMessage);
         }
         else
         {
@@ -246,11 +284,10 @@ public class AllianceSystem
                 if (!string.IsNullOrEmpty(playerKey))
                 {
                     string replyMessage = groupEntry.Value.Count > 0 ? string.Join(", ", groupEntry.Value.Select(member => $"<color=green>{member}</color>")) : "No members in alliance.";
-                    HandleReply(ctx, replyMessage);
+                    ctx.Reply(replyMessage);
                     return;
                 }
             }
         }
     }
-    
 }

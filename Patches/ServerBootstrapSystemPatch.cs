@@ -19,11 +19,11 @@ internal static class ServerBootstrapSystemPatch
         User user = __instance.EntityManager.GetComponentData<User>(userEntity);
         ulong steamId = user.PlatformId;
 
-        if (Plugin.PlayerAlliances.Value && !Core.DataStructures.PlayerBools.ContainsKey(steamId))
+        if (Plugin.Alliances.Value && !Core.DataStructures.PlayerBools.ContainsKey(steamId))
         {
             Core.DataStructures.PlayerBools.Add(steamId, new Dictionary<string, bool>
             {
-                { "AllianceInvites", false },
+                { "AllianceInvites", false }
             });
             Core.DataStructures.SavePlayerBools();
         }
