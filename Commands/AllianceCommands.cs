@@ -46,7 +46,7 @@ internal static class AllianceCommands
 
         if (Core.DataStructures.PlayerBools.TryGetValue(SteamID, out var bools))
         {
-            bools["Grouping"] = !bools["Grouping"];
+            bools["AllianceInvites"] = !bools["AllianceInvites"];
         }
         Core.DataStructures.SavePlayerBools();
         ctx.Reply( $"Alliance invites {(bools["Grouping"] ? "<color=green>enabled</color>" : "<color=red>disabled</color>")}.");

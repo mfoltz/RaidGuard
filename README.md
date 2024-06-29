@@ -1,4 +1,4 @@
-﻿## Table of Contents
+## Table of Contents
 
 - [Features](#features)
 - [Commands](#commands)

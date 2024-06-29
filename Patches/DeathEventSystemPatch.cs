@@ -22,9 +22,9 @@ internal static class DeathEventListenerSystemPatch
         {
             foreach (DeathEvent deathEvent in deathEvents)
             {
-                if (!Core.hasInitialized || !RaidGuard) continue;
+                if (!Core.hasInitialized) continue;
                 
-                if (deathEvent.Died.Has<AnnounceCastleBreached>() && deathEvent.StatChangeReason.Equals(StatChangeReason.StatChangeSystem_0))
+                if (RaidGuard && deathEvent.Died.Has<AnnounceCastleBreached>() && deathEvent.StatChangeReason.Equals(StatChangeReason.StatChangeSystem_0))
                 {
                     if (Core.ServerGameManager.TryGetBuff(deathEvent.Killer, siegeGolem.ToIdentifier(), out Entity buff)) // if this was done by a player with a siege golem buff, start raid service
                     {

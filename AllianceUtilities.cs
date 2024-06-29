@@ -135,11 +135,11 @@ internal static class AllianceUtilities
     }
     public static bool IsLeaderEligibleForAlliance(User leaderUser, string leaderName)
     {
-        if (Core.DataStructures.PlayerBools.TryGetValue(leaderUser.PlatformId, out var bools) && bools["Grouping"])
+        if (Core.DataStructures.PlayerBools.TryGetValue(leaderUser.PlatformId, out var bools) && bools["AllianceInvites"])
         {
             if (!Core.DataStructures.PlayerAlliances.ContainsKey(leaderUser.PlatformId) && !Core.DataStructures.PlayerAlliances.Values.Any(alliance => alliance.Equals(leaderName)))
             {
-                bools["Grouping"] = false;
+                bools["AllianceInvites"] = false;
                 Core.DataStructures.SavePlayerBools();
                 return true;
             }
@@ -188,6 +188,9 @@ internal static class AllianceUtilities
             if (IsPlayerEligibleForAlliance(foundUser, playerName))
             {
                 HashSet<string> ownerClanMembers = GetOwnerClanMembers(ctx.Event.User.ClanEntity._Entity);
+
+                if (ownerClanMembers.Count == 0) ownerClanMembers.Add(ctx.Event.User.CharacterName.Value);
+
                 AddPlayerToAlliance(ctx, ownerId, playerName, ownerClanMembers);
             }
             else
@@ -202,11 +205,11 @@ internal static class AllianceUtilities
     }
     public static bool IsPlayerEligibleForAlliance(User foundUser, string playerName)
     {
-        if (Core.DataStructures.PlayerBools.TryGetValue(foundUser.PlatformId, out var bools) && bools["Grouping"])
+        if (Core.DataStructures.PlayerBools.TryGetValue(foundUser.PlatformId, out var bools) && bools["AllianceInvites"])
         {
             if (!Core.DataStructures.PlayerAlliances.ContainsKey(foundUser.PlatformId) && !Core.DataStructures.PlayerAlliances.Values.Any(alliance => alliance.Equals(playerName)))
             {
-                bools["Grouping"] = false;
+                bools["AllianceInvites"] = false;
                 Core.DataStructures.SavePlayerBools();
                 return true;
             }

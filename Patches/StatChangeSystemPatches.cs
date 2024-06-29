@@ -23,13 +23,12 @@ internal static class StatChangeSystemPatches
             foreach (Entity entity in entities)
             {
                 if (!Core.hasInitialized) continue;
-                if (!PlayerAlliances || !PreventFriendlyFire) continue;
 
                 DealDamageEvent dealDamageEvent = entity.Read<DealDamageEvent>();
 
                 if (dealDamageEvent.MainType != MainDamageType.Physical && dealDamageEvent.MainType != MainDamageType.Spell) continue;
 
-                if (dealDamageEvent.Target.TryGetComponent(out PlayerCharacter target))
+                if (PlayerAlliances && PreventFriendlyFire && dealDamageEvent.Target.TryGetComponent(out PlayerCharacter target))
                 {
                     if (dealDamageEvent.SpellSource.TryGetComponent(out EntityOwner entityOwner) && entityOwner.Owner.TryGetComponent(out PlayerCharacter source))
                     {
