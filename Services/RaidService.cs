@@ -52,7 +52,7 @@ internal class RaidService
             ));
         }
     }
-    static List<Entity> GetAllowedAllies(Entity breached) => GetEntities(breached.Read<UserOwner>().Owner._Entity);
+    static List<Entity> GetAllowedAllies(Entity breached) => GetEntities(breached.Read<CastleHeartConnection>().CastleHeartEntity._Entity.Read<UserOwner>().Owner._Entity);
     static List<Entity> GetAllowedRaiders(Entity raider) => GetEntities(raider.Read<PlayerCharacter>().UserEntity);
     static HashSet<Entity> GetAllowedParticipants(Entity raider, Entity breached)
     {
@@ -75,6 +75,7 @@ internal class RaidService
             var userBuffer = clanEntity.ReadBuffer<SyncToUserBuffer>();
             for (int i = 0; i < userBuffer.Length; i++)
             {
+                //Core.Log.LogInfo($"Adding {userBuffer[i].UserEntity.Read<User>().CharacterName.Value} to allowed participants...");
                 entities.Add(userBuffer[i].UserEntity);
             }
         }
@@ -113,6 +114,7 @@ internal class RaidService
             {
                 Entity userEntity = player.Value;
                 User user = userEntity.Read<User>();
+                if (!user.IsConnected) continue;
                 Entity character = user.LocalCharacter._Entity;
                 if (character.TryGetComponent(out TilePosition pos))
                 {
@@ -124,12 +126,14 @@ internal class RaidService
                             Participants.Remove(heartEntity);
                             return;
                         }
+
                         bool territoryCheck = CastleTerritoryExtensions.IsTileInTerritory(EntityManager, pos.Tile, ref castleHeart.CastleTerritoryEntity, out CastleTerritory _);
+
                         if (territoryCheck && !Participants[heartEntity].Allowed.Contains(userEntity)) // if not allowed and in territory, debuff
                         {
                             ApplyDebuff(character, userEntity, sendMessage, "You are not allowed in this territory during a raid.");
                         }
-                        else if (territoryCheck && LimitAssists && Participants[heartEntity].Allowed.Contains(userEntity) && user.IsConnected) // if allowed and in territory and LimitAssists and online, add to actives  ADD THIS BACK AFTER TESTING
+                        else if (territoryCheck && LimitAssists && Participants[heartEntity].Allowed.Contains(userEntity)) // if allowed and in territory and LimitAssists and online, add to actives  ADD THIS BACK AFTER TESTING
                         {
                             if (Participants[heartEntity].AllowedAllies.Contains(userEntity))
                             {
@@ -153,12 +157,12 @@ internal class RaidService
                                     Participants[heartEntity].ActiveRaiders.Add(userEntity);
                                     if (Participants[heartEntity].ActiveRaiders.IndexOf(userEntity) > Assists - 1) // if latest arrival is greater than allowed assists, debuff them
                                     {
-                                        ApplyDebuff(character, userEntity, sendMessage, "You are not allowed in this territory during a raid (maximum allied assists reached).");
+                                        ApplyDebuff(character, userEntity, sendMessage, "You are not allowed in this territory during a raid (maximum raider assists reached).");
                                     }
                                 }
                                 else if (Participants[heartEntity].ActiveRaiders.IndexOf(userEntity) > Assists - 1)
                                 {
-                                    ApplyDebuff(character, userEntity, sendMessage, "You are not allowed in this territory during a raid (maximum allied assists reached).");
+                                    ApplyDebuff(character, userEntity, sendMessage, "You are not allowed in this territory during a raid (maximum raider assists reached).");
                                 }
                             }
                         }
@@ -194,19 +198,21 @@ internal class RaidService
                 Character = character,
                 User = userEntity,
             };
+
             DebugEventsSystem.ApplyBuff(fromCharacter, applyBuffDebugEvent); // apply green fire to interlopers and block healing
+
             if (ServerGameManager.TryGetBuff(character, debuff.ToIdentifier(), out Entity debuffEntity))
             {
                 debuffEntity.Add<BlockHealBuff>();
                 debuffEntity.Write(new BlockHealBuff { PercentageBlocked = 1f });
                 if (debuffEntity.TryGetComponent(out LifeTime lifeTime))
                 {
-                    lifeTime.Duration = 10f;
+                    lifeTime.Duration = 60f;
                     debuffEntity.Write(lifeTime);
                 }
                 var tickBuffer = debuffEntity.ReadBuffer<CreateGameplayEventsOnTick>();
                 CreateGameplayEventsOnTick tickBufferEntry = tickBuffer[0];
-                tickBufferEntry.MaxTicks = 10;
+                tickBufferEntry.MaxTicks = 60;
                 tickBuffer[0] = tickBufferEntry;
                 var damageBuffer = debuffEntity.ReadBuffer<DealDamageOnGameplayEvent>();
                 DealDamageOnGameplayEvent damageBufferEntry = damageBuffer[0];

@@ -4,7 +4,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
 	<AssemblyName>RaidGuard</AssemblyName>
-	<Version>1.0.1</Version>
+	<Version>1.0.2</Version>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
     <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
 	<BepInExPluginGuid>io.zfolmt.RaidGuard</BepInExPluginGuid>
@@ -37,7 +37,7 @@
 	</Target>
 	<Target Name="CopyDLLsRepo" AfterTargets="Build">
 		<Message Text="DLL to V Rising Server" Importance="High" />
-		<Copy SourceFiles="$(TargetDir)$(ProjectName).dll" DestinationFolder="C:\Users\mitch\source\Repos\Bloodcraft" />
+		<Copy SourceFiles="$(TargetDir)$(ProjectName).dll" DestinationFolder="C:\Users\mitch\source\Repos\RaidGuard" />
 		<Message Text="DLL Server Copied OK" Importance="High" />
 	</Target>
 	

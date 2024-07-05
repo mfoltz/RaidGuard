@@ -23,7 +23,7 @@ internal static class AllianceCommands
         Entity ownerClanEntity = ctx.Event.User.ClanEntity._Entity;
         string name = ctx.Event.User.CharacterName.Value;
 
-        if (ClanAlliances && ownerClanEntity.Equals(Entity.Null) || !Core.EntityManager.Exists(ownerClanEntity))
+        if (ClanAlliances && ownerClanEntity.Equals(Entity.Null))
         {
             ctx.Reply("You must be the leader of a clan to toggle alliance invites.");
             return;
@@ -49,7 +49,7 @@ internal static class AllianceCommands
             bools["AllianceInvites"] = !bools["AllianceInvites"];
         }
         Core.DataStructures.SavePlayerBools();
-        ctx.Reply( $"Alliance invites {(bools["Grouping"] ? "<color=green>enabled</color>" : "<color=red>disabled</color>")}.");
+        ctx.Reply( $"Alliance invites {(bools["AllianceInvites"] ? "<color=green>enabled</color>" : "<color=red>disabled</color>")}.");
     }
 
     [Command(name: "allianceAdd", shortHand: "aa", adminOnly: false, usage: ".aa [Player/Clan]", description: "Adds player/clan to alliance if invites are toggled (if clan based owner of clan must toggle).")]
