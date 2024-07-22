@@ -11,6 +11,7 @@ internal class RaidService
 {
     static readonly bool PlayerAlliances = Plugin.Alliances.Value;
     static readonly bool LimitAssists = Plugin.LimitAssists.Value;
+    static readonly bool LockParticipants = Plugin.LockParticipants.Value;
     static readonly int Assists = Plugin.AllianceAssists.Value;
     static EntityManager EntityManager => Core.EntityManager;
     static DebugEventsSystem DebugEventsSystem => Core.DebugEventsSystem;
@@ -168,11 +169,11 @@ internal class RaidService
                         }
                         else if (!territoryCheck && LimitAssists && Participants[heartEntity].Allowed.Contains(userEntity))
                         {
-                            if (Participants[heartEntity].ActiveAllies.Contains(userEntity))
+                            if (Participants[heartEntity].ActiveAllies.Contains(userEntity) && !LockParticipants)
                             {
                                 Participants[heartEntity].ActiveAllies.Remove(userEntity);
                             }
-                            else if (Participants[heartEntity].ActiveRaiders.Contains(userEntity))
+                            else if (Participants[heartEntity].ActiveRaiders.Contains(userEntity) && !LockParticipants)
                             {
                                 Participants[heartEntity].ActiveRaiders.Remove(userEntity);
                             }
