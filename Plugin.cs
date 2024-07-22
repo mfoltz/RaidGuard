@@ -29,6 +29,7 @@ internal class Plugin : BasePlugin
     private static ConfigEntry<bool> _preventFriendlyFire;
     private static ConfigEntry<bool> _limitAssists;
     private static ConfigEntry<int> _allianceAssists;
+    private static ConfigEntry<bool> _lockParticipants;
 
     // public getters, kinda verbose might just get rid of these
     public static ConfigEntry<bool> RaidGuard => _raidGuard;
@@ -38,6 +39,7 @@ internal class Plugin : BasePlugin
     public static ConfigEntry<bool> PreventFriendlyFire => _preventFriendlyFire;
     public static ConfigEntry<bool> LimitAssists => _limitAssists;
     public static ConfigEntry<int> AllianceAssists => _allianceAssists;
+    public static ConfigEntry<bool> LockParticipants => _lockParticipants;
 
     public override void Load()
     {
@@ -62,6 +64,7 @@ internal class Plugin : BasePlugin
         _maxAllianceSize = InitConfigEntry("Config", "MaxAllianceSize", 4, "The maximum number of players allowed in an alliance (clan members of founding alliance member are included automatically regardless if using clan-based alliances or not and do not count towards this number).");
         _limitAssists = InitConfigEntry("Config", "LimitAssists", false, "True to limit the number of assists during a raid (see below config option for how many allowed if this is set to true).");
         _allianceAssists = InitConfigEntry("Config", "AllianceAssists", 4, "The maximum number of alliance members that can enter a raided territory to assist (includes owning clan members. if this is 4 and 2 owning clan members are offline, then the first 2 alliance members to enter the territory can assist without taking damage from RaidGuard).");
+        _lockParticipants = InitConfigEntry("Config", "LockParticipants", false, "If this is true, leaving the territory will not remove clan or ally members from the raid, meaning rotation of alliance members is not allowed");
     }
     static ConfigEntry<T> InitConfigEntry<T>(string section, string key, T defaultValue, string description)
     {
