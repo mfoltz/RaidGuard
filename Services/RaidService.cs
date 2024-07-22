@@ -58,7 +58,7 @@ internal class RaidService
     static HashSet<Entity> GetAllowedParticipants(Entity raider, Entity breached)
     {
         var allowedParticipants = new HashSet<Entity>();
-        allowedParticipants.UnionWith(GetEntities(breached.Read<UserOwner>().Owner._Entity));
+        allowedParticipants.UnionWith(GetEntities(breached.Read<CastleHeartConnection>().CastleHeartEntity._Entity.Read<UserOwner>().Owner._Entity));
         allowedParticipants.UnionWith(GetEntities(raider.Read<PlayerCharacter>().UserEntity));
 
         return allowedParticipants;
