@@ -30,6 +30,11 @@ internal class Plugin : BasePlugin
     private static ConfigEntry<bool> _limitAssists;
     private static ConfigEntry<int> _allianceAssists;
     private static ConfigEntry<bool> _lockParticipants;
+    private static ConfigEntry<bool> _blockOutsideDamage;
+    private static ConfigEntry<bool> _golemGuard;
+    private static ConfigEntry<int> _golemEntryProtection;
+    private static ConfigEntry<int> _golemHitAttackProtection;
+    private static ConfigEntry<int> _golemHitBreachedProtection;
 
     // public getters, kinda verbose might just get rid of these
     public static ConfigEntry<bool> RaidGuard => _raidGuard;
@@ -40,6 +45,12 @@ internal class Plugin : BasePlugin
     public static ConfigEntry<bool> LimitAssists => _limitAssists;
     public static ConfigEntry<int> AllianceAssists => _allianceAssists;
     public static ConfigEntry<bool> LockParticipants => _lockParticipants;
+    public static ConfigEntry<bool> BlockOutsideDamage => _blockOutsideDamage;
+    public static ConfigEntry<bool> GolemGuard => _golemGuard;
+    public static ConfigEntry<int> GolemEntryProtection => _golemEntryProtection;
+    public static ConfigEntry<int> GolemHitAttackProtection => _golemHitAttackProtection;
+    public static ConfigEntry<int> GolemHitBreachedProtection => _golemHitBreachedProtection;
+
 
     public override void Load()
     {
@@ -65,6 +76,12 @@ internal class Plugin : BasePlugin
         _limitAssists = InitConfigEntry("Config", "LimitAssists", false, "True to limit the number of assists during a raid (see below config option for how many allowed if this is set to true).");
         _allianceAssists = InitConfigEntry("Config", "AllianceAssists", 4, "The maximum number of alliance members that can enter a raided territory to assist (includes owning clan members. if this is 4 and 2 owning clan members are offline, then the first 2 alliance members to enter the territory can assist without taking damage from RaidGuard).");
         _lockParticipants = InitConfigEntry("Config", "LockParticipants", false, "If this is true, leaving the territory will not remove clan or ally members from the raid, meaning rotation of alliance members is not allowed");
+        _blockOutsideDamage = InitConfigEntry("Config", "BlockOutsideDamage", true, "If set to true, third parties will deal zero damage to members of an active raid");
+
+        _golemGuard = InitConfigEntry("GolemGuard", "GolemGuard", true, "Enable or disable the protections granted to golems off-plot from a raid");
+        _golemEntryProtection = InitConfigEntry("GolemGuard", "GolemEntryProtection", 30, "Time of protection upon entering a summoned golem from anyone");
+        _golemHitAttackProtection = InitConfigEntry("GolemGuard", "GolemHitAttackProtection", 15, "Time of protection given per hit of a castle (pre-breach) from third party attacks");
+        _golemHitBreachedProtection = InitConfigEntry("GolemGuard", "GolemHitBreachedProtection", 30, "Time of protection given per hit of a castle (post-breach) from third party attacks");
     }
     static ConfigEntry<T> InitConfigEntry<T>(string section, string key, T defaultValue, string description)
     {

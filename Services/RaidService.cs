@@ -4,7 +4,9 @@ using ProjectM.Network;
 using ProjectM.Scripting;
 using Stunlock.Core;
 using System.Collections;
+using Unity.Collections;
 using Unity.Entities;
+using static ProjectM.AggroRequests;
 
 namespace RaidGuard.Services;
 internal class RaidService
@@ -19,7 +21,7 @@ internal class RaidService
 
     static readonly PrefabGUID debuff = new(-1572696947);
 
-    static Dictionary<Entity, (HashSet<Entity> Allowed, List<Entity> AllowedAllies, List<Entity> AllowedRaiders, List<Entity> ActiveAllies, List<Entity> ActiveRaiders)> Participants = []; // castleHeart entity and players allowed in territory for the raid (owner clan, raiding clan, alliance members if applicable)
+    static Dictionary<Entity, (HashSet<Entity> Allowed, List<Entity> AllowedAllies, List<Entity> AllowedRaiders, List<Entity> ActiveAllies, List<Entity> ActiveRaiders, List<GolemTrack> ActiveGolems)> Participants = []; // castleHeart entity and players allowed in territory for the raid (owner clan, raiding clan, alliance members if applicable)
     static Dictionary<ulong, HashSet<string>> Alliances => Core.DataStructures.PlayerAlliances;
 
     static bool active = false;
@@ -31,6 +33,7 @@ internal class RaidService
         if (!active) // if not active start monitor loop after clearing caches
         {
             Core.Log.LogInfo("Starting raid monitor...");
+            ServerChatUtils.SendSystemMessageToAllClients(Core.Server.EntityManager, $"Starting Raid Monitor..."); // REMOVE BEFORE PUSHING
             Participants.Clear(); // clear previous raid participants, this should be empty here anyway but just incase
             AddRaidParticipants(heartEntity, raider, breached);
             Core.StartCoroutine(RaidMonitor());
@@ -49,7 +52,8 @@ internal class RaidService
                 GetAllowedAllies(breached),
                 GetAllowedRaiders(raider),
                 new List<Entity>(),
-                new List<Entity>()
+                new List<Entity>(),
+                new List<GolemTrack>()
             ));
         }
     }
@@ -63,7 +67,7 @@ internal class RaidService
 
         return allowedParticipants;
     }
-    static List<Entity> GetEntities(Entity userEntity)
+    public static List<Entity> GetEntities(Entity userEntity)
     {
         HashSet<Entity> entities = [];
         User playerUser = userEntity.Read<User>();
@@ -106,6 +110,7 @@ internal class RaidService
             if (Participants.Keys.Count == 0)
             {
                 active = false;
+                ServerChatUtils.SendSystemMessageToAllClients(Core.Server.EntityManager, $"Raid ended: 0 Participants"); // REMOVE BEFORE PUSHING
                 Core.Log.LogInfo("Stopping raid monitor...");
                 yield break;
             }
@@ -124,6 +129,7 @@ internal class RaidService
                         CastleHeart castleHeart = heartEntity.Read<CastleHeart>();
                         if (!castleHeart.IsSieged())
                         {
+                            ServerChatUtils.SendSystemMessageToAllClients(Core.Server.EntityManager, $"Heart removed from Raid Monitor"); // REMOVE BEFORE PUSHING
                             Participants.Remove(heartEntity);
                             return;
                         }
@@ -222,5 +228,101 @@ internal class RaidService
             }
         }
         if (sendMessage) ServerChatUtils.SendSystemMessageToClient(EntityManager, userEntity.Read<User>(), message);
+    }
+
+    public static bool ThirdPartyCheck(Entity target, Entity source)
+    {
+        bool targetFound = false;
+        bool sourceFound = false;
+
+        foreach (var collection in Participants)
+        {
+            if (collection.Value.Allowed.Contains(target))
+            {
+                targetFound = true;
+            }
+            if (collection.Value.Allowed.Contains(source))
+            {
+                sourceFound = true;
+            }
+            if (targetFound && sourceFound)
+            {
+                return false;
+            }
+        }
+
+        if (!targetFound && !sourceFound)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    public static bool IsInRaidCheck(Entity entity)
+    {
+        foreach (var collection in Participants)
+        {
+            if (collection.Value.Allowed.Contains(entity))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static void ProtectRaidGolem(Entity player, Entity golem, int length)
+    {
+        foreach (var collection in Participants)
+        {
+            if (collection.Value.Allowed.Contains(player))
+            {
+                GolemTrack track = collection.Value.ActiveGolems.FirstOrDefault(x => x.entity == golem);
+
+                if (track == null)
+                {
+                    track = new GolemTrack();
+                    track.entity = golem;
+                    track.protectionUntil = DateTime.Now.AddSeconds(length);
+
+                    collection.Value.ActiveGolems.Add(track);
+                }
+                else
+                {
+                    track.protectionUntil = DateTime.Now.AddSeconds(length);
+                }
+
+                return;
+            }
+        }
+    }
+
+    public static bool IsRaidGolemProtected(Entity entity)
+    {
+        foreach (var collection in Participants)
+        {
+            GolemTrack track = collection.Value.ActiveGolems.FirstOrDefault(x => x.entity == entity);
+
+            if (track == null)
+            {
+                continue;
+            }
+            else
+            {
+                int i = track.protectionUntil.CompareTo(DateTime.Now);
+
+                if (i > 0)
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
+
+        return false;
     }
 }
